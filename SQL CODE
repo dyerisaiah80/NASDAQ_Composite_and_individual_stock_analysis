@@ -1,0 +1,78 @@
+CREATE TEMP TABLE temp1 AS 
+SELECT [indexdata].date,
+[indexdata].open,
+[indexdata].close,
+[indexdata].low,
+[indexdata].high,
+Amazon.open as open_amazon,
+amazon.close as close_amazon,
+amazon.low as low_amazon,
+amazon.high as high_amazon
+FROM indexData
+JOIN amazon ON [indexdata].date = amazon.date
+WHERE [index] = 'IXIC';
+
+CREATE TEMP TABLE temp2 AS
+SELECT aapl.date,
+aapl.open as open_aapl,
+aapl.close as close_aapl,
+aapl.low as low_aapl,
+aapl.high as high_aapl,
+msft.open as open_msft,
+msft.close as close_msft,
+msft.low as low_msft,
+msft.high as high_msft
+FROM AAPL
+JOIN msft ON aapl.date = msft.date;
+
+CREATE TEMP TABLE temp3 AS
+SELECT *
+FROM temp1
+JOIN temp2 ON temp1.date = temp2.date;
+
+CREATE TABLE ixic_aapl_amz_msft_stock_data AS
+SELECT strftime('%Y',date) || '-' || strftime('%m',date) AS month_date,
+AVG(open) as open,
+AVG(close) as close,
+AVG(low) as low,
+AVG(high) as high,
+AVG(open_aapl) as open_aapl,
+AVG(close_aapl) as close_aapl,
+AVG(low_aapl) as low_aapl,
+AVG(high_aapl) as high_aapl,
+AVG(open_amazon) as open_amazon,
+AVG(close_amazon) as close_amazon,
+AVG(low_amazon) as low_amazon,
+AVG(high_amazon) as high_amazon,
+AVG(open_msft) as open_msft,
+AVG(close_msft) as close_msft,
+AVG(low_msft) as low_msft,
+AVG(high_msft) as high_msft
+FROM temp3
+GROUP BY month_date;
+
+
+CREATE TABLE stock_data_normalized_volume_close AS
+SELECT 
+month_date,
+(volume * 1.0 / FIRST_VALUE(volume) OVER(ORDER BY month_date ASC)* 100) AS normalized_volume,
+(volume_aapl * 1.0 / FIRST_VALUE(volume_aapl) OVER(ORDER BY month_date ASC)* 100) AS normalized_volume_aapl,
+(volume_amazon * 1.0 / FIRST_VALUE(volume_amazon) OVER(ORDER BY month_date ASC)* 100) AS normalized_volume_amazon,
+(volume_msft * 1.0 / FIRST_VALUE(volume_msft) OVER(ORDER BY month_date ASC)* 100) AS normalized_volume_msft,
+(close * 1.0 / FIRST_VALUE(close) OVER(ORDER BY month_date ASC)* 100) AS normalized_close,
+(close_aapl * 1.0 / FIRST_VALUE(close_aapl) OVER(ORDER BY month_date ASC)* 100) AS normalized_close_aapl,
+(close_amazon * 1.0 / FIRST_VALUE(close_amazon) OVER(ORDER BY month_date ASC)* 100) AS normalized__close_amazon,
+(close_msft * 1.0 / FIRST_VALUE(close_msft) OVER(ORDER BY month_date ASC)* 100) AS normalized_close_msft
+FROM ixic_aapl_amz_msft_stock_data
+
+
+
+
+CREATE TABLE stock_percent_volatility AS
+SELECT 
+month_date,
+((high - low) / open) * 100 AS volatility,
+((high_aapl - low_aapl) / open_aapl) * 100 AS volatility_aapl,
+((high_amazon - low_amazon) / open_amazon) * 100 AS volatility_amazon,
+((high_msft - low_msft) / open_msft) * 100 AS volatility_msft
+FROM ixic_aapl_amz_msft_stock_data
