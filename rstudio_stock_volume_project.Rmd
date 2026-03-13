@@ -1,0 +1,220 @@
+---
+title: "stock_volume_project"
+output: github_document
+date: "2026-03-11"
+---
+
+<h1>load packages</h1>
+```{r}
+library('tidyverse')
+library('patchwork')
+```
+
+<h1>Read Data to dataframe</h1>
+```{r}
+df <- read.csv('ixic_aapl_amz_msft_stock_data.csv')
+```
+
+<h2>chaging column type of month_date</h2>
+```{r}
+df$month_date <- as.Date(df$month_date)
+```
+
+
+
+
+<h1>creating line plots to see volume, open, close, high, low, of aapl, msft, amazon, and IXIC stocks</h1>
+
+<h2>line plots for volume</h2>
+```{r}
+plot1 <- ggplot(df)+
+  geom_line(aes(x=month_date, y=volume))
+plot2 <- ggplot(df)+
+  geom_line(aes(x=month_date, y=volume_aapl))
+plot3 <- ggplot(df)+
+  geom_line(aes(x=month_date, y=volume_amazon))
+plot4 <- ggplot(df)+
+  geom_line(aes(x=month_date, y=volume_msft))
+(plot1 + plot2)/(plot3 + plot4)
+```
+```{r}
+smooth_plot1 <- ggplot(df)+
+  geom_smooth(aes(x=month_date, y=volume))
+smooth_plot2 <- ggplot(df)+
+  geom_smooth(aes(x=month_date, y=volume_aapl))
+smooth_plot3 <- ggplot(df)+
+  geom_smooth(aes(x=month_date, y=volume_amazon))
+smooth_plot4 <- ggplot(df)+
+  geom_smooth(aes(x=month_date, y=volume_msft))
+(smooth_plot1 + smooth_plot2)/(smooth_plot3 + smooth_plot4)
+```
+
+
+
+
+<h2>Seeing if months or seasons affect different stocks</h2>
+<h3>aapl</h3>
+```{r}
+ggplot(df, aes(x=month_date, y=volume_aapl),na.rm=TRUE)+
+  geom_line()+
+  scale_x_date(
+    date_breaks = '1 month',
+    date_labels = '%b %Y'
+  )+
+  theme(axis.text.x = element_text(angle=90))
+```
+<h3>amazon</h3>
+```{r}
+ggplot(df, aes(x=month_date, y=volume_amazon),na.rm=TRUE)+
+  geom_line()+
+  scale_x_date(
+    date_breaks = '1 month',
+    date_labels = '%b %Y'
+  )+
+  theme(axis.text.x = element_text(angle=90))
+```
+<h3>msft</h3>
+
+
+```{r}
+ggplot(df, aes(x=month_date, y=volume_msft),na.rm=TRUE)+
+  geom_line()+
+  scale_x_date(
+    date_breaks = '1 month',
+    date_labels = '%b %Y'
+  )+
+  theme(axis.text.x = element_text(angle=90))
+```
+<h3>ixic index</h3>
+```{r}
+ggplot(df, aes(x=month_date, y=volume),na.rm=TRUE)+
+  geom_line()+
+  scale_x_date(
+    date_breaks = '1 month',
+    date_labels = '%b %Y'
+  )+
+  theme(axis.text.x = element_text(angle=90))
+```
+<h2>Making graphs to understand high, low, open, and close</h2>
+
+
+```{r}
+ggplot(df)+
+  geom_line(mapping= aes(x=month_date, y=low))+
+  geom_line(mapping= aes(x=month_date, y=high))+
+  labs(title='IXIC index')+
+    scale_x_date(
+    date_breaks = '1 month',
+    date_labels = '%b %Y'
+  )+
+    theme(axis.text.x = element_text(angle=90))
+ggplot(df)+
+  geom_line(mapping= aes(x=month_date, y=low_aapl))+
+  geom_line(mapping= aes(x=month_date, y=high_aapl))+
+  labs(title='apple')+
+    scale_x_date(
+    date_breaks = '1 month',
+    date_labels = '%b %Y'
+  )+
+    theme(axis.text.x = element_text(angle=90))
+ggplot(df)+
+  geom_line(mapping= aes(x=month_date, y=low_amazon))+
+  geom_line(mapping= aes(x=month_date, y=high_amazon))+
+  labs(title='amazon')+
+    scale_x_date(
+    date_breaks = '1 month',
+    date_labels = '%b %Y'
+  )+
+    theme(axis.text.x = element_text(angle=90))
+ggplot(df)+
+  geom_line(mapping= aes(x=month_date, y=low_msft))+
+  geom_line(mapping= aes(x=month_date, y=high_msft))+
+  labs(title='microsoft')+
+    scale_x_date(
+    date_breaks = '1 month',
+    date_labels = '%b %Y'
+  )+
+    theme(axis.text.x = element_text(angle=90))
+
+  
+```
+<h1>checking for correlation with stock price and volume</h1>
+
+
+```{r}
+cor_ixic <- cor(df$volume,df$close)
+ggplot(df,aes(x=volume,y=close))+
+  geom_point()+
+  labs(title=paste('IXIC Index---',cor_ixic))
+
+cor_aapl <- cor(df$volume_aapl,df$close_aapl)
+ggplot(df,aes(x=volume_aapl,y=close_aapl))+
+  geom_point()+
+  labs(title=paste('apple---',cor_aapl))
+
+cor_amazon <- cor(df$volume_amazon,df$close_amazon)
+ggplot(df,aes(x=volume_amazon,y=close_amazon))+
+  geom_point()+
+  labs(title=paste('amazon---',cor_amazon))
+
+cor_msft <- cor(df$volume_msft,df$close_msft)
+ggplot(df,aes(x=volume_msft,y=close_msft))+
+  geom_point()+
+  labs(title=paste('microsoft---',cor_msft))
+
+  
+
+```
+<h1>calculating volatility</h1>
+<h3>creating percent volatility columns</h3>
+```{r}
+df$volatility <- ((df$high - df$low) / df$open) * 100
+df$volatility_aapl <- ((df$high_aapl - df$low_aapl) / df$open_aapl) * 100
+df$volatility_amazon <- ((df$high_amazon - df$low_amazon) / df$open_amazon) * 100
+df$volatility_msft <- ((df$high_msft - df$low_msft) / df$open_msft) * 100
+
+```
+
+<h3>calculating average volatility between the different stocks</h3>
+```{r}
+mean(df$volatility)
+mean(df$volatility_aapl)
+mean(df$volatility_amazon)
+mean(df$volatility_msft)
+```
+<h3>graphing volatility</h3>
+```{r}
+ggplot(df)+
+  geom_line(mapping=aes(x=month_date, y=volatility), color='blue',linewidth=2)+
+  geom_line(mapping=aes(x=month_date, y=volatility_aapl),color='purple',linewidth=2)+
+  geom_line(mapping=aes(x=month_date, y=volatility_amazon),color='red',linewidth=2)+
+  geom_line(mapping=aes(x=month_date, y=volatility_msft),color='green',linewidth=2)
+
+```
+
+<h1> normalized volume </h1>
+
+
+```{r}
+df$normalized_volume <- (df$volume / df$volume[1]) * 100
+df$normalized_volume_aapl <- (df$volume_aapl / df$volume_aapl[1]) * 100
+df$normalized_volume_amazon <- (df$volume_amazon / df$volume_amazon[1]) * 100
+df$normalized_volume_msft <- (df$volume_msft / df$volume_msft[1]) * 100
+ggplot(df)+
+  geom_line(mapping = aes(x=month_date, y=normalized_volume))+
+  geom_line(mapping = aes(x=month_date, y=normalized_volume_aapl))+
+  geom_line(mapping = aes(x=month_date, y=normalized_volume_amazon))+
+  geom_line(mapping = aes(x=month_date, y=normalized_volume_msft))
+ggplot(df)+
+  geom_smooth(mapping = aes(x=month_date, y=normalized_volume))+
+  geom_smooth(mapping = aes(x=month_date, y=normalized_volume_aapl))+
+  geom_smooth(mapping = aes(x=month_date, y=normalized_volume_amazon))+
+  geom_smooth(mapping = aes(x=month_date, y=normalized_volume_msft))
+```
+
+
+
+
+
+
+
